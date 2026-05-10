@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ZEN-X GALAXY — Admin Panel</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#05050f;--card:#0d0d1e;--border:rgba(255,255,255,.08);
+  --violet:#7c3aed;--blue:#2563eb;--cyan:#06b6d4;
+  --red:#ef4444;--green:#22c55e;--yellow:#f59e0b;
+  --text:rgba(255,255,255,.9);--text2:rgba(255,255,255,.55);--text3:rgba(255,255,255,.3)
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
+
+/* TOAST */
+#toasts{position:fixed;top:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{padding:10px 16px;border-radius:12px;font-size:13px;font-weight:600;pointer-events:all;animation:tIn .3s ease}
+.toast.s{background:rgba(6,46,30,.95);border:1px solid #10b981;color:#6ee7b7}
+.toast.e{background:rgba(69,10,10,.95);border:1px solid #ef4444;color:#fca5a5}
+.toast.i{background:rgba(15,23,42,.95);border:1px solid #3b82f6;color:#93c5fd}
+@keyframes tIn{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* LOGIN PAGE */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(124,58,237,.18),transparent 70%)}
+.login-box{width:100%;max-width:400px;background:rgba(13,13,30,.95);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:36px;backdrop-filter:blur(20px)}
+.login-logo{text-align:center;margin-bottom:28px}
+.login-logo-icon{width:72px;height:72px;border-radius:20px;background:linear-gradient(135deg,var(--violet),var(--blue));display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:28px;box-shadow:0 0 32px rgba(124,58,237,.5)}
+.login-title{font-size:22px;font-weight:900;text-align:center;margin-bottom:4px}
+.login-sub{font-size:12px;color:var(--text3);text-align:center;font-family:monospace;letter-spacing:.15em;text-transform:uppercase;margin-bottom:28px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:10px;font-family:monospace;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;font-weight:600}
+.field input{width:100%;padding:12px 16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:14px;outline:none;transition:all .18s;font-family:inherit}
+.field input:focus{border-color:rgba(139,92,246,.55);background:rgba(255,255,255,.07);box-shadow:0 0 0 3px rgba(124,58,237,.12)}
+.btn-login{width:100%;padding:13px;background:linear-gradient(135deg,var(--violet),var(--blue));color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;margin-top:8px;box-shadow:0 4px 20px rgba(124,58,237,.4)}
+.btn-login:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(124,58,237,.55)}
+.btn-login:active{transform:scale(.97)}
+.wrong-hint{font-size:11px;color:#f87171;text-align:center;margin-top:10px;display:none}
+
+/* ADMIN LAYOUT */
+#admin-app{display:none;min-height:100vh}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:240px;background:rgba(8,8,20,.97);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:30;transition:transform .25s}
+.sidebar-head{padding:20px 16px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sidebar-logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--violet),var(--blue));display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;box-shadow:0 0 16px rgba(124,58,237,.4)}
+.sidebar-title{font-weight:900;font-size:13px;line-height:1.2}
+.sidebar-subtitle{font-size:9px;font-family:monospace;color:rgba(139,92,246,.8);letter-spacing:.15em;text-transform:uppercase}
+nav.sidebar-nav{flex:1;padding:10px;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:11px;color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;transition:all .16s;border:1px solid transparent;background:transparent;width:100%;text-align:left;margin-bottom:2px}
+.nav-item:hover{background:rgba(139,92,246,.08);color:#fff;border-color:rgba(139,92,246,.15)}
+.nav-item.active{background:rgba(139,92,246,.12);color:#c4b5fd;border-color:rgba(139,92,246,.25)}
+.nav-item .badge{margin-left:auto;background:rgba(239,68,68,.85);color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;font-family:monospace}
+.nav-divider{height:1px;background:var(--border);margin:8px 0}
+.sidebar-footer{padding:12px;border-top:1px solid var(--border)}
+
+.main-content{margin-left:240px;min-height:100vh;padding:24px}
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:16px}
+.page-title{font-size:22px;font-weight:900}
+.page-sub{font-size:12px;color:var(--text3);margin-top:2px}
+
+/* CARDS */
+.glass{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:16px;backdrop-filter:blur(12px)}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin-bottom:24px}
+.stat-card{background:rgba(13,13,30,.9);border:1px solid var(--border);border-radius:16px;padding:20px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;right:0;width:80px;height:80px;border-radius:50%;filter:blur(30px);opacity:.4}
+.stat-card.v::before{background:var(--violet)}
+.stat-card.b::before{background:var(--blue)}
+.stat-card.c::before{background:var(--cyan)}
+.stat-card.g::before{background:var(--green)}
+.stat-card.r::before{background:var(--red)}
+.stat-val{font-size:28px;font-weight:900;margin-bottom:4px}
+.stat-lbl{font-size:11px;color:var(--text3);font-family:monospace;text-transform:uppercase;letter-spacing:.06em}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;border-radius:14px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;min-width:600px}
+th{background:rgba(255,255,255,.04);padding:11px 14px;font-size:10px;font-family:monospace;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);text-align:left;font-weight:700;white-space:nowrap}
+td{padding:12px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.05);vertical-align:middle}
+tr:hover td{background:rgba(255,255,255,.02)}
+.tdmuted{color:var(--text3);font-size:12px}
+.td-title{font-weight:600;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;font-size:9px;font-weight:800;letter-spacing:.06em;padding:2px 7px;border-radius:20px;font-family:monospace;text-transform:uppercase}
+.badge-g{background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.35);color:#86efac}
+.badge-r{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.35);color:#fca5a5}
+.badge-y{background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.35);color:#fcd34d}
+.badge-b{background:rgba(37,99,235,.15);border:1px solid rgba(37,99,235,.35);color:#93c5fd}
+.badge-v{background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.35);color:#c4b5fd}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;cursor:pointer;font-weight:600;transition:all .16s;font-family:inherit;font-size:12px;border-radius:9px;padding:7px 13px}
+.btn-sm-v{background:linear-gradient(135deg,var(--violet),var(--blue));color:#fff}
+.btn-sm-v:hover{opacity:.88;transform:translateY(-1px)}
+.btn-sm-g{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:#86efac}
+.btn-sm-g:hover{background:rgba(34,197,94,.2)}
+.btn-sm-r{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#fca5a5}
+.btn-sm-r:hover{background:rgba(239,68,68,.18)}
+.btn-sm-y{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);color:#fcd34d}
+.btn-sm-y:hover{background:rgba(245,158,11,.18)}
+.btn-sm-ghost{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--text2)}
+.btn-sm-ghost:hover{background:rgba(255,255,255,.1);color:#fff}
+.btn-danger{background:rgba(239,68,68,.85);color:#fff}
+.btn-danger:hover{background:#ef4444}
+.btn-primary{background:linear-gradient(135deg,var(--violet),var(--blue));color:#fff;padding:11px 22px;font-size:13px;border-radius:12px;box-shadow:0 4px 16px rgba(124,58,237,.3)}
+.btn-primary:hover{transform:translateY(-2px)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:rgba(10,10,24,.97);border:1px solid rgba(255,255,255,.1);border-radius:22px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto;padding:28px}
+.modal h3{font-size:17px;font-weight:900;margin-bottom:20px}
+.form-row{margin-bottom:14px}
+.form-lbl{display:block;font-size:10px;font-family:monospace;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;font-weight:600}
+.inp{width:100%;padding:11px 14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:11px;color:#fff;font-size:13px;outline:none;transition:all .18s;font-family:inherit}
+.inp:focus{border-color:rgba(139,92,246,.5);box-shadow:0 0 0 3px rgba(124,58,237,.1)}
+.inp::placeholder{color:var(--text3)}
+textarea.inp{resize:vertical;min-height:80px}
+select.inp{cursor:pointer}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:22px}
+
+/* SPIN */
+.spin{width:28px;height:28px;border-radius:50%;border:2px solid transparent;border-top-color:#8b5cf6;border-right-color:#06b6d4;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* SECTION */
+.section{display:none}
+.section.active{display:block}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:14px;flex-wrap:wrap}
+.section-title{font-size:17px;font-weight:800}
+.search-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.search-inp{padding:9px 14px 9px 36px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:11px;color:#fff;font-size:13px;outline:none;transition:all .18s;width:220px;font-family:inherit;position:relative}
+.search-inp:focus{border-color:rgba(139,92,246,.4)}
+.search-inp::placeholder{color:var(--text3)}
+.search-wrap{position:relative}
+.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--text3)}
+
+/* EMPTY */
+.empty{text-align:center;padding:48px 0;color:var(--text3)}
+.empty-icon{font-size:36px;margin-bottom:12px;opacity:.5}
+.empty-txt{font-size:14px;font-weight:600;color:var(--text2)}
+
+/* MOBILE */
+.hamburger{display:none;background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--text2);border-radius:10px;padding:8px;cursor:pointer}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main-content{margin-left:0;padding:16px}
+  .hamburger{display:flex;align-items:center}
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+}
+.overlay-mobile{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:29}
+.overlay-mobile.open{display:block}
+
+/* IMG preview */
+.img-preview{width:48px;height:48px;border-radius:10px;object-fit:cover;border:1px solid var(--border)}
+.img-ph{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff}
+
+/* Detail expandable */
+.detail-box{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:12px;color:var(--text2);line-height:1.7;word-break:break-all;margin-top:8px;display:none}
+.detail-box.open{display:block}
+</style>
+</head>
+<body>
+<div id="toasts"></div>
+
+<!-- ══ LOGIN PAGE ══════════════════════════════════════════ -->
+<div id="login-page" class="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon">🛸</div>
+      <h1 class="login-title">ZEN-X GALAXY</h1>
+      <p class="login-sub">Admin Control Panel</p>
+    </div>
+    <form onsubmit="doAdminLogin(event)">
+      <div class="field">
+        <label>Username Admin</label>
+        <input type="text" id="adm-user" placeholder="Username admin" autocomplete="off" required/>
+      </div>
+      <div class="field">
+        <label>Password Admin</label>
+        <input type="password" id="adm-pass" placeholder="••••••••••••" required/>
+      </div>
+      <button type="submit" class="btn-login" id="login-btn">
+        <span id="login-btn-txt">MASUK KE ADMIN</span>
+      </button>
+      <p class="wrong-hint" id="wrong-hint">❌ Username atau password salah!</p>
+    </form>
+    <p style="font-size:10px;color:var(--text3);text-align:center;margin-top:20px;font-family:monospace">PRIVATE ACCESS — UNAUTHORIZED ENTRY PROHIBITED</p>
+  </div>
+</div>
+
+<!-- ══ ADMIN APP ════════════════════════════════════════════ -->
+<div id="admin-app">
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-head">
+      <div class="sidebar-logo">🛸</div>
+      <div>
+        <div class="sidebar-title">ZEN-X GALAXY</div>
+        <div class="sidebar-subtitle">Admin Panel</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="showSection('dashboard',this)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-item" onclick="showSection('apk-manager',this)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Kelola APK
+      </button>
+      <button class="nav-item" onclick="showSection('vip-manager',this)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        VIP Members
+        <span class="badge" id="vip-badge" style="display:none">0</span>
+      </button>
+      <button class="nav-item" onclick="showSection('regular-users',this)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Regular Users
+      </button>
+      <div class="nav-divider"></div>
+      <button class="nav-item" onclick="showSection('bug-reports',this)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Bug Reports
+        <span class="badge" id="bug-badge" style="display:none">0</span>
+      </button>
+      <button class="nav-item" onclick="showSection('apk-requests',this)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        APK Requests
+        <span class="badge" id="req-badge" style="display:none">0</span>
+      </button>
+      <button class="nav-item" onclick="showSection('logs',this)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Activity Logs
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="nav-item" style="color:rgba(239,68,68,.75)" onclick="doLogout()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Logout Admin
+      </button>
+    </div>
+  </div>
+
+  <div class="overlay-mobile" id="mob-overlay" onclick="closeSidebar()"></div>
+
+  <!-- Main -->
+  <div class="main-content">
+    <div class="top-bar">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="hamburger" onclick="openSidebar()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div>
+          <div class="page-title" id="cur-title">Dashboard</div>
+          <div class="page-sub" id="cur-sub">Selamat datang di Admin Panel ZEN-X GALAXY</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="font-size:12px;color:var(--text3);font-family:monospace;display:flex;align-items:center;gap:6px">
+          <div style="width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e"></div>
+          ZENX_ADMIN
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="section active" id="sec-dashboard">
+      <div class="stat-grid" id="stat-grid">
+        <div class="stat-card v"><div class="stat-val" id="st-apk">—</div><div class="stat-lbl">Total APK</div></div>
+        <div class="stat-card b"><div class="stat-val" id="st-vip">—</div><div class="stat-lbl">VIP Members</div></div>
+        <div class="stat-card c"><div class="stat-val" id="st-reg">—</div><div class="stat-lbl">Regular Users</div></div>
+        <div class="stat-card g"><div class="stat-val" id="st-dl">—</div><div class="stat-lbl">Total Downloads</div></div>
+        <div class="stat-card r"><div class="stat-val" id="st-bug">—</div><div class="stat-lbl">Open Bugs</div></div>
+        <div class="stat-card y"><div class="stat-val" id="st-req">—</div><div class="stat-lbl">APK Requests</div></div>
+      </div>
+      <div class="glass" style="padding:20px">
+        <p style="font-size:11px;font-family:monospace;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:14px">APK Terbaru</p>
+        <div id="recent-apks"><div style="display:flex;justify-content:center;padding:20px"><div class="spin"></div></div></div>
+      </div>
+    </div>
+
+    <!-- APK MANAGER -->
+    <div class="section" id="sec-apk-manager">
+      <div class="section-head">
+        <div class="section-title">Kelola APK</div>
+        <div class="search-row">
+          <div class="search-wrap">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" class="search-inp" placeholder="Cari APK…" id="apk-search" oninput="renderApkTable()" style="padding-left:34px"/>
+          </div>
+          <button class="btn btn-primary" onclick="openAddApk()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Tambah APK
+          </button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Icon</th><th>Judul</th><th>Kategori</th><th>Versi</th><th>Downloads</th><th>Aksi</th></tr></thead>
+          <tbody id="apk-tbody"><tr><td colspan="6" style="text-align:center;padding:32px"><div class="spin" style="margin:0 auto"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VIP MANAGER -->
+    <div class="section" id="sec-vip-manager">
+      <div class="section-head">
+        <div class="section-title">VIP Members</div>
+        <button class="btn btn-primary" onclick="openAddVip()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Tambah VIP Manual
+        </button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Username</th><th>Email</th><th>Status</th><th>Role</th><th>Tanggal</th><th>Aksi</th></tr></thead>
+          <tbody id="vip-tbody"><tr><td colspan="6" style="text-align:center;padding:32px"><div class="spin" style="margin:0 auto"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- REGULAR USERS -->
+    <div class="section" id="sec-regular-users">
+      <div class="section-head">
+        <div class="section-title">Regular Users</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Username</th><th>Email</th><th>UID</th><th>Bergabung</th><th>Aksi</th></tr></thead>
+          <tbody id="reg-tbody"><tr><td colspan="5" style="text-align:center;padding:32px"><div class="spin" style="margin:0 auto"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- BUG REPORTS -->
+    <div class="section" id="sec-bug-reports">
+      <div class="section-head"><div class="section-title">Bug Reports</div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Judul</th><th>Halaman</th><th>User</th><th>Status</th><th>Tanggal</th><th>Aksi</th></tr></thead>
+          <tbody id="bug-tbody"><tr><td colspan="6" style="text-align:center;padding:32px"><div class="spin" style="margin:0 auto"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- APK REQUESTS -->
+    <div class="section" id="sec-apk-requests">
+      <div class="section-head"><div class="section-title">APK Requests</div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nama Aplikasi</th><th>Link</th><th>Alasan</th><th>User</th><th>Status</th><th>Tanggal</th><th>Aksi</th></tr></thead>
+          <tbody id="req-tbody"><tr><td colspan="7" style="text-align:center;padding:32px"><div class="spin" style="margin:0 auto"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- LOGS -->
+    <div class="section" id="sec-logs">
+      <div class="section-head"><div class="section-title">Activity Logs</div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Aksi</th><th>Target</th><th>User</th><th>Waktu</th></tr></thead>
+          <tbody id="log-tbody"><tr><td colspan="4" style="text-align:center;padding:32px"><div class="spin" style="margin:0 auto"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: ADD/EDIT APK ══ -->
+<div class="modal-overlay" id="modal-apk">
+  <div class="modal">
+    <h3 id="modal-apk-title">Tambah APK Baru</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-row" style="grid-column:1/-1">
+        <label class="form-lbl">Judul Aplikasi *</label>
+        <input class="inp" id="f-title" placeholder="Contoh: Mobile Legends Mod"/>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Slug (URL ID) *</label>
+        <input class="inp" id="f-slug" placeholder="mobile-legends-mod"/>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Kategori *</label>
+        <select class="inp" id="f-cat">
+          <option value="APK">APK</option>
+          <option value="Game">Game</option>
+          <option value="VIP">VIP</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Versi</label>
+        <input class="inp" id="f-version" placeholder="1.0.0"/>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Ukuran</label>
+        <input class="inp" id="f-size" placeholder="120 MB"/>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Developer</label>
+        <input class="inp" id="f-dev" placeholder="Moonton"/>
+      </div>
+      <div class="form-row" style="grid-column:1/-1">
+        <label class="form-lbl">Icon URL</label>
+        <input class="inp" id="f-icon" placeholder="https://…/icon.png"/>
+      </div>
+      <div class="form-row" style="grid-column:1/-1">
+        <label class="form-lbl">Link Download Utama *</label>
+        <input class="inp" id="f-dl" placeholder="https://mediafire.com/…"/>
+      </div>
+      <div class="form-row" style="grid-column:1/-1">
+        <label class="form-lbl">Link Download Alt (untuk Regular User)</label>
+        <input class="inp" id="f-alt" placeholder="https://…"/>
+      </div>
+      <div class="form-row" style="grid-column:1/-1">
+        <label class="form-lbl">Deskripsi</label>
+        <textarea class="inp" id="f-desc" placeholder="Deskripsi singkat aplikasi…"></textarea>
+      </div>
+      <div class="form-row" style="grid-column:1/-1">
+        <label class="form-lbl">Changelog</label>
+        <textarea class="inp" id="f-changelog" placeholder="- Fitur baru&#10;- Bug fix…"></textarea>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Trending?</label>
+        <select class="inp" id="f-trending"><option value="false">Tidak</option><option value="true">Ya</option></select>
+      </div>
+      <div class="form-row">
+        <label class="form-lbl">Updated?</label>
+        <select class="inp" id="f-updated"><option value="false">Tidak</option><option value="true">Ya</option></select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-sm-ghost" onclick="closeModal('modal-apk')">Batal</button>
+      <button class="btn btn-primary" id="save-apk-btn" onclick="saveApk()">Simpan APK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: ADD VIP ══ -->
+<div class="modal-overlay" id="modal-vip">
+  <div class="modal">
+    <h3>Tambah VIP Member Manual</h3>
+    <div class="form-row">
+      <label class="form-lbl">Username *</label>
+      <input class="inp" id="fv-user" placeholder="Username"/>
+    </div>
+    <div class="form-row">
+      <label class="form-lbl">Email *</label>
+      <input class="inp" id="fv-email" type="email" placeholder="email@contoh.com"/>
+    </div>
+    <div class="form-row">
+      <label class="form-lbl">Status</label>
+      <select class="inp" id="fv-status">
+        <option value="approved">Approved</option>
+        <option value="pending">Pending</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-sm-ghost" onclick="closeModal('modal-vip')">Batal</button>
+      <button class="btn btn-primary" onclick="saveVip()">Tambah VIP</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: CONFIRM DELETE ══ -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal" style="max-width:380px;text-align:center">
+    <div style="font-size:36px;margin-bottom:12px">⚠️</div>
+    <h3 id="confirm-title">Hapus Item?</h3>
+    <p id="confirm-desc" style="font-size:13px;color:var(--text2);margin:10px 0 22px;line-height:1.6"></p>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button class="btn btn-sm-ghost" style="padding:10px 22px;font-size:13px" onclick="closeModal('modal-confirm')">Batal</button>
+      <button class="btn btn-danger" style="padding:10px 22px;font-size:13px" id="confirm-ok-btn">Hapus</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import{getFirestore,collection,doc,addDoc,setDoc,updateDoc,deleteDoc,getDoc,getDocs,query,orderBy,where,onSnapshot,serverTimestamp,limit}from"https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// ── Config (same as your main site) ─────────────────────────
+const FB={
+  apiKey:"AIzaSyBgTvWqyFBKqcybRvjHz8tGp-zXrcdSeEU",
+  authDomain:"vip-web-9eb2e.firebaseapp.com",
+  projectId:"vip-web-9eb2e",
+  storageBucket:"vip-web-9eb2e.firebasestorage.app",
+  messagingSenderId:"1053492264581",
+  appId:"1:1053492264581:web:d55141dddbb54c3016b3ec"
+};
+const app=initializeApp(FB);
+const db=getFirestore(app);
+
+// ── Admin Credentials (GANTI JIKA PERLU) ────────────────────
+const ADMIN_USER="ZENX_ADMIN";
+const ADMIN_PASS="ZenX#Galaxy$2025";
+
+// ── State ────────────────────────────────────────────────────
+let allApks=[], allVips=[], allRegs=[], allBugs=[], allReqs=[], allLogs=[];
+let editApkId=null;
+
+// ── Toast ────────────────────────────────────────────────────
+window.showToast=(msg,type="i")=>{
+  const c=document.getElementById("toasts");
+  const t=document.createElement("div");
+  t.className=`toast ${type}`;t.textContent=msg;
+  c.appendChild(t);
+  setTimeout(()=>{t.style.cssText="opacity:0;transform:translateX(110%);transition:all .3s";setTimeout(()=>t.remove(),320)},3200);
+};
+
+// ── Login ────────────────────────────────────────────────────
+window.doAdminLogin=e=>{
+  e.preventDefault();
+  const u=document.getElementById("adm-user").value.trim();
+  const p=document.getElementById("adm-pass").value;
+  const btn=document.getElementById("login-btn");
+  const hint=document.getElementById("wrong-hint");
+  if(u===ADMIN_USER&&p===ADMIN_PASS){
+    sessionStorage.setItem("zenx_admin","1");
+    document.getElementById("login-page").style.display="none";
+    document.getElementById("admin-app").style.display="block";
+    loadAll();
+    showToast("Selamat datang, Admin! 🛸","s");
+  }else{
+    hint.style.display="block";
+    btn.style.background="rgba(239,68,68,.8)";
+    setTimeout(()=>{btn.style.background="";hint.style.display="none"},2500);
+  }
+};
+window.doLogout=()=>{
+  sessionStorage.removeItem("zenx_admin");
+  location.reload();
+};
+
+// Check session
+if(sessionStorage.getItem("zenx_admin")==="1"){
+  document.getElementById("login-page").style.display="none";
+  document.getElementById("admin-app").style.display="block";
+  setTimeout(loadAll,100);
+}
+
+// ── Sidebar ──────────────────────────────────────────────────
+window.openSidebar=()=>{
+  document.getElementById("sidebar").classList.add("open");
+  document.getElementById("mob-overlay").classList.add("open");
+};
+window.closeSidebar=()=>{
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("mob-overlay").classList.remove("open");
+};
+
+// ── Section nav ──────────────────────────────────────────────
+const titles={
+  "dashboard":["Dashboard","Ringkasan data ZEN-X GALAXY"],
+  "apk-manager":["Kelola APK","Tambah, edit, dan hapus APK"],
+  "vip-manager":["VIP Members","Kelola member VIP"],
+  "regular-users":["Regular Users","Semua user terdaftar"],
+  "bug-reports":["Bug Reports","Laporan bug dari user"],
+  "apk-requests":["APK Requests","Request APK dari user"],
+  "logs":["Activity Logs","Log aktivitas platform"]
+};
+window.showSection=(id,btn)=>{
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.getElementById(`sec-${id}`).classList.add("active");
+  document.querySelectorAll(".nav-item").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  const t=titles[id]||[id,""];
+  document.getElementById("cur-title").textContent=t[0];
+  document.getElementById("cur-sub").textContent=t[1];
+  closeSidebar();
+};
+
+// ── Modal helpers ────────────────────────────────────────────
+window.closeModal=id=>document.getElementById(id).classList.remove("open");
+document.querySelectorAll(".modal-overlay").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)m.classList.remove("open")}));
+
+// ── Load All Data ────────────────────────────────────────────
+function loadAll(){
+  loadApks(); loadVips(); loadRegUsers(); loadBugs(); loadRequests(); loadLogs();
+}
+
+function loadApks(){
+  onSnapshot(query(collection(db,"apkApps"),orderBy("createdAt","desc")),snap=>{
+    allApks=snap.docs.map(d=>({id:d.id,...d.data()}));
+    document.getElementById("st-apk").textContent=allApks.length;
+    const dl=allApks.reduce((s,a)=>s+(a.downloads||0),0);
+    document.getElementById("st-dl").textContent=dl;
+    renderApkTable();
+    renderRecentApks();
+  },err=>console.warn("apks:",err));
+}
+
+function loadVips(){
+  onSnapshot(query(collection(db,"vipUsers"),orderBy("createdAt","desc")),snap=>{
+    allVips=snap.docs.map(d=>({id:d.id,...d.data()}));
+    document.getElementById("st-vip").textContent=allVips.length;
+    const pending=allVips.filter(v=>v.status==="pending").length;
+    const badge=document.getElementById("vip-badge");
+    if(pending>0){badge.textContent=pending;badge.style.display="inline-flex";}
+    else badge.style.display="none";
+    renderVipTable();
+  },err=>console.warn("vips:",err));
+}
+
+function loadRegUsers(){
+  onSnapshot(query(collection(db,"regularUsers"),orderBy("createdAt","desc")),snap=>{
+    allRegs=snap.docs.map(d=>({id:d.id,...d.data()}));
+    document.getElementById("st-reg").textContent=allRegs.length;
+    renderRegTable();
+  },err=>console.warn("regs:",err));
+}
+
+function loadBugs(){
+  onSnapshot(query(collection(db,"bugReports"),orderBy("createdAt","desc")),snap=>{
+    allBugs=snap.docs.map(d=>({id:d.id,...d.data()}));
+    const open=allBugs.filter(b=>b.status==="open").length;
+    document.getElementById("st-bug").textContent=open;
+    const badge=document.getElementById("bug-badge");
+    if(open>0){badge.textContent=open;badge.style.display="inline-flex";}
+    else badge.style.display="none";
+    renderBugTable();
+  },err=>console.warn("bugs:",err));
+}
+
+function loadRequests(){
+  onSnapshot(query(collection(db,"apkRequests"),orderBy("createdAt","desc")),snap=>{
+    allReqs=snap.docs.map(d=>({id:d.id,...d.data()}));
+    document.getElementById("st-req").textContent=allReqs.length;
+    const pending=allReqs.filter(r=>r.status==="pending").length;
+    const badge=document.getElementById("req-badge");
+    if(pending>0){badge.textContent=pending;badge.style.display="inline-flex";}
+    else badge.style.display="none";
+    renderReqTable();
+  },err=>console.warn("reqs:",err));
+}
+
+function loadLogs(){
+  onSnapshot(query(collection(db,"adminLogs"),orderBy("timestamp","desc"),limit(100)),snap=>{
+    allLogs=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderLogTable();
+  },err=>console.warn("logs:",err));
+}
+
+// ── Render helpers ───────────────────────────────────────────
+function fmtDate(ts){
+  if(!ts?.seconds)return"—";
+  return new Date(ts.seconds*1000).toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"});
+}
+function fmtDateTime(ts){
+  if(!ts?.seconds)return"—";
+  return new Date(ts.seconds*1000).toLocaleString("id-ID",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
+}
+function catGrad(cat){
+  const m={game:"135deg,#7c3aed,#db2777",apk:"135deg,#0891b2,#2563eb",vip:"135deg,#b45309,#d97706"};
+  return"linear-gradient("+(m[cat?.toLowerCase()]||"135deg,#4f46e5,#7c3aed")+")";
+}
+
+// ── APK Table ────────────────────────────────────────────────
+window.renderApkTable=()=>{
+  const s=(document.getElementById("apk-search")?.value||"").toLowerCase();
+  const data=s?allApks.filter(a=>a.title?.toLowerCase().includes(s)||a.category?.toLowerCase().includes(s)):allApks;
+  const tb=document.getElementById("apk-tbody");
+  if(!data.length){tb.innerHTML=`<tr><td colspan="6"><div class="empty"><div class="empty-icon">📦</div><p class="empty-txt">Belum ada APK</p></div></td></tr>`;return;}
+  tb.innerHTML=data.map(a=>`
+  <tr>
+    <td>${a.iconUrl?`<img src="${a.iconUrl}" class="img-preview" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="img-ph" style="background:${catGrad(a.category)};display:none">${a.title?.[0]||"?"}</div>`:`<div class="img-ph" style="background:${catGrad(a.category)}">${a.title?.[0]||"?"}</div>`}</td>
+    <td><div class="td-title">${a.title||"—"}</div><div class="tdmuted">${a.slug||a.id}</div></td>
+    <td><span class="badge badge-v">${a.category||"—"}</span></td>
+    <td class="tdmuted">${a.version?"v"+a.version:"—"}</td>
+    <td class="tdmuted">${a.downloads||0}</td>
+    <td>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-sm-v" onclick="openEditApk('${a.id}')">Edit</button>
+        <button class="btn btn-sm-r" onclick="confirmDelete('apkApps','${a.id}','APK: ${(a.title||"").replace(/'/g,"\\'")}')">Hapus</button>
+      </div>
+    </td>
+  </tr>`).join("");
+};
+
+function renderRecentApks(){
+  const el=document.getElementById("recent-apks");
+  const data=allApks.slice(0,5);
+  if(!data.length){el.innerHTML=`<p style="color:var(--text3);font-size:13px">Belum ada APK.</p>`;return;}
+  el.innerHTML=data.map(a=>`
+  <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--border)">
+    ${a.iconUrl?`<img src="${a.iconUrl}" style="width:36px;height:36px;border-radius:9px;object-fit:cover;flex-shrink:0">`:`<div style="width:36px;height:36px;border-radius:9px;background:${catGrad(a.category)};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;flex-shrink:0">${a.title?.[0]||"?"}</div>`}
+    <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.title||"?"}</div><div style="font-size:11px;color:var(--text3)">${a.category||""} · ${a.downloads||0} downloads</div></div>
+    <div style="font-size:11px;color:var(--text3);white-space:nowrap">${fmtDate(a.createdAt)}</div>
+  </div>`).join("");
+}
+
+// ── VIP Table ────────────────────────────────────────────────
+function renderVipTable(){
+  const tb=document.getElementById("vip-tbody");
+  if(!allVips.length){tb.innerHTML=`<tr><td colspan="6"><div class="empty"><div class="empty-icon">👑</div><p class="empty-txt">Belum ada VIP member</p></div></td></tr>`;return;}
+  tb.innerHTML=allVips.map(v=>`
+  <tr>
+    <td style="font-weight:600">${v.username||"—"}</td>
+    <td class="tdmuted">${v.email||"—"}</td>
+    <td>${v.status==="approved"?'<span class="badge badge-g">Approved</span>':v.status==="pending"?'<span class="badge badge-y">Pending</span>':'<span class="badge badge-r">'+v.status+'</span>'}</td>
+    <td>${v.role==="vip"?'<span class="badge badge-v">VIP</span>':'<span class="badge badge-b">'+v.role+'</span>'}</td>
+    <td class="tdmuted">${fmtDate(v.createdAt||v.requestedAt)}</td>
+    <td>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${v.status==="pending"?`<button class="btn btn-sm-g" onclick="approveVip('${v.id}')">Approve</button>`:""}
+        <button class="btn btn-sm-r" onclick="confirmDelete('vipUsers','${v.id}','VIP User: ${(v.username||"").replace(/'/g,"\\'")}')">Hapus</button>
+      </div>
+    </td>
+  </tr>`).join("");
+}
+
+// ── Regular Users Table ──────────────────────────────────────
+function renderRegTable(){
+  const tb=document.getElementById("reg-tbody");
+  if(!allRegs.length){tb.innerHTML=`<tr><td colspan="5"><div class="empty"><div class="empty-icon">👤</div><p class="empty-txt">Belum ada user</p></div></td></tr>`;return;}
+  tb.innerHTML=allRegs.map(u=>`
+  <tr>
+    <td style="font-weight:600">${u.username||"—"}</td>
+    <td class="tdmuted">${u.email||"—"}</td>
+    <td class="tdmuted" style="font-family:monospace;font-size:11px">${(u.uid||u.id||"").substring(0,16)}…</td>
+    <td class="tdmuted">${fmtDate(u.createdAt)}</td>
+    <td>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm-v" onclick="promoteToVip('${u.id}','${(u.username||"").replace(/'/g,"\\'")}','${(u.email||"").replace(/'/g,"\\'")}')">→ VIP</button>
+        <button class="btn btn-sm-r" onclick="confirmDelete('regularUsers','${u.id}','User: ${(u.username||"").replace(/'/g,"\\'")}')">Hapus</button>
+      </div>
+    </td>
+  </tr>`).join("");
+}
+
+// ── Bug Reports Table ────────────────────────────────────────
+function renderBugTable(){
+  const tb=document.getElementById("bug-tbody");
+  if(!allBugs.length){tb.innerHTML=`<tr><td colspan="6"><div class="empty"><div class="empty-icon">🐛</div><p class="empty-txt">Tidak ada laporan bug</p></div></td></tr>`;return;}
+  tb.innerHTML=allBugs.map(b=>`
+  <tr>
+    <td><div class="td-title" title="${b.title||''}">${b.title||"—"}</div>
+      <div class="detail-box" id="bugd-${b.id}">${b.description||"—"}</div>
+      <button style="font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;padding:2px 0" onclick="toggleDetail('bugd-${b.id}')">Lihat detail ▾</button>
+    </td>
+    <td class="tdmuted">${b.page||"—"}</td>
+    <td class="tdmuted">${b.userEmail||"—"}</td>
+    <td>${b.status==="open"?'<span class="badge badge-r">Open</span>':'<span class="badge badge-g">Resolved</span>'}</td>
+    <td class="tdmuted">${fmtDate(b.createdAt)}</td>
+    <td>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${b.status==="open"?`<button class="btn btn-sm-g" onclick="resolveBug('${b.id}')">Resolve</button>`:""}
+        <button class="btn btn-sm-r" onclick="confirmDelete('bugReports','${b.id}','Bug Report')">Hapus</button>
+      </div>
+    </td>
+  </tr>`).join("");
+}
+
+// ── APK Requests Table ───────────────────────────────────────
+function renderReqTable(){
+  const tb=document.getElementById("req-tbody");
+  if(!allReqs.length){tb.innerHTML=`<tr><td colspan="7"><div class="empty"><div class="empty-icon">📩</div><p class="empty-txt">Belum ada request APK</p></div></td></tr>`;return;}
+  tb.innerHTML=allReqs.map(r=>`
+  <tr>
+    <td style="font-weight:600">${r.title||"—"}</td>
+    <td><a href="${r.link||"#"}" target="_blank" rel="noopener" style="color:#67e8f9;font-size:12px;text-decoration:none">${r.link?r.link.substring(0,35)+"…":"—"}</a></td>
+    <td class="tdmuted">${r.reason||"—"}</td>
+    <td class="tdmuted">${r.userEmail||"—"}</td>
+    <td>${r.status==="pending"?'<span class="badge badge-y">Pending</span>':r.status==="fulfilled"?'<span class="badge badge-g">Fulfilled</span>':'<span class="badge badge-b">'+r.status+'</span>'}</td>
+    <td class="tdmuted">${fmtDate(r.createdAt)}</td>
+    <td>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${r.status==="pending"?`<button class="btn btn-sm-g" onclick="fulfillReq('${r.id}')">Fulfill</button>`:""}
+        <button class="btn btn-sm-r" onclick="confirmDelete('apkRequests','${r.id}','APK Request')">Hapus</button>
+      </div>
+    </td>
+  </tr>`).join("");
+}
+
+// ── Logs Table ───────────────────────────────────────────────
+function renderLogTable(){
+  const tb=document.getElementById("log-tbody");
+  if(!allLogs.length){tb.innerHTML=`<tr><td colspan="4"><div class="empty"><div class="empty-icon">📋</div><p class="empty-txt">Belum ada log</p></div></td></tr>`;return;}
+  tb.innerHTML=allLogs.map(l=>`
+  <tr>
+    <td><span class="badge ${l.action?.includes("DELETE")?"badge-r":l.action?.includes("DOWNLOAD")?"badge-b":"badge-v"}">${l.action||"?"}</span></td>
+    <td class="tdmuted">${l.apkTitle||l.targetId?.substring(0,20)||"—"}</td>
+    <td class="tdmuted">${l.userId?.substring(0,16)||"admin"}</td>
+    <td class="tdmuted">${fmtDateTime(l.timestamp)}</td>
+  </tr>`).join("");
+}
+
+// ── Toggle detail ────────────────────────────────────────────
+window.toggleDetail=id=>{
+  const el=document.getElementById(id);
+  if(el)el.classList.toggle("open");
+};
+
+// ── APK Modal ────────────────────────────────────────────────
+window.openAddApk=()=>{
+  editApkId=null;
+  ["f-title","f-slug","f-version","f-size","f-dev","f-icon","f-dl","f-alt","f-desc","f-changelog"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+  document.getElementById("f-cat").value="APK";
+  document.getElementById("f-trending").value="false";
+  document.getElementById("f-updated").value="false";
+  document.getElementById("modal-apk-title").textContent="Tambah APK Baru";
+  document.getElementById("modal-apk").classList.add("open");
+};
+window.openEditApk=id=>{
+  const a=allApks.find(x=>x.id===id);if(!a)return;
+  editApkId=id;
+  document.getElementById("f-title").value=a.title||"";
+  document.getElementById("f-slug").value=a.slug||"";
+  document.getElementById("f-cat").value=a.category||"APK";
+  document.getElementById("f-version").value=a.version||"";
+  document.getElementById("f-size").value=a.size||"";
+  document.getElementById("f-dev").value=a.developer||"";
+  document.getElementById("f-icon").value=a.iconUrl||"";
+  document.getElementById("f-dl").value=a.downloadUrl||"";
+  document.getElementById("f-alt").value=a.altDownloadUrl||"";
+  document.getElementById("f-desc").value=a.description||"";
+  document.getElementById("f-changelog").value=a.changelog||"";
+  document.getElementById("f-trending").value=a.trending?"true":"false";
+  document.getElementById("f-updated").value=a.updated?"true":"false";
+  document.getElementById("modal-apk-title").textContent="Edit APK";
+  document.getElementById("modal-apk").classList.add("open");
+};
+
+window.saveApk=async()=>{
+  const title=document.getElementById("f-title").value.trim();
+  const slug=document.getElementById("f-slug").value.trim();
+  const cat=document.getElementById("f-cat").value;
+  const dl=document.getElementById("f-dl").value.trim();
+  if(!title||!slug){showToast("Judul dan Slug wajib diisi!","e");return;}
+  const btn=document.getElementById("save-apk-btn");
+  btn.disabled=true;btn.textContent="Menyimpan…";
+  const data={
+    title,slug,category:cat,
+    version:document.getElementById("f-version").value.trim(),
+    size:document.getElementById("f-size").value.trim(),
+    developer:document.getElementById("f-dev").value.trim(),
+    iconUrl:document.getElementById("f-icon").value.trim(),
+    downloadUrl:dl,
+    altDownloadUrl:document.getElementById("f-alt").value.trim(),
+    description:document.getElementById("f-desc").value.trim(),
+    changelog:document.getElementById("f-changelog").value.trim(),
+    trending:document.getElementById("f-trending").value==="true",
+    updated:document.getElementById("f-updated").value==="true",
+    updatedAt:serverTimestamp()
+  };
+  try{
+    if(editApkId){
+      await updateDoc(doc(db,"apkApps",editApkId),data);
+      showToast("APK berhasil diupdate!","s");
+      await addDoc(collection(db,"adminLogs"),{action:"APK UPDATED",targetId:editApkId,apkTitle:title,timestamp:serverTimestamp()});
+    }else{
+      data.downloads=0;data.createdAt=serverTimestamp();
+      const ref=await addDoc(collection(db,"apkApps"),data);
+      showToast("APK berhasil ditambahkan!","s");
+      await addDoc(collection(db,"adminLogs"),{action:"APK ADDED",targetId:ref.id,apkTitle:title,timestamp:serverTimestamp()});
+    }
+    closeModal("modal-apk");
+  }catch(err){console.error(err);showToast("Gagal menyimpan APK.","e");}
+  finally{btn.disabled=false;btn.textContent="Simpan APK";}
+};
+
+// Auto-fill slug from title
+document.getElementById("f-title")?.addEventListener("input",e=>{
+  if(!editApkId){
+    const s=e.target.value.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+    document.getElementById("f-slug").value=s;
+  }
+});
+
+// ── VIP Modal ────────────────────────────────────────────────
+window.openAddVip=()=>{
+  document.getElementById("fv-user").value="";
+  document.getElementById("fv-email").value="";
+  document.getElementById("fv-status").value="approved";
+  document.getElementById("modal-vip").classList.add("open");
+};
+window.saveVip=async()=>{
+  const username=document.getElementById("fv-user").value.trim();
+  const email=document.getElementById("fv-email").value.trim();
+  const status=document.getElementById("fv-status").value;
+  if(!username||!email){showToast("Username dan Email wajib!","e");return;}
+  try{
+    await addDoc(collection(db,"vipUsers"),{username,email,status,role:status==="approved"?"vip":"pending",createdAt:serverTimestamp()});
+    showToast("VIP Member ditambahkan!","s");
+    await addDoc(collection(db,"adminLogs"),{action:"VIP ADDED",apkTitle:email,timestamp:serverTimestamp()});
+    closeModal("modal-vip");
+  }catch(err){console.error(err);showToast("Gagal menambah VIP.","e");}
+};
+window.approveVip=async id=>{
+  try{
+    await updateDoc(doc(db,"vipUsers",id),{status:"approved",role:"vip",approvedAt:serverTimestamp()});
+    showToast("VIP Member diapprove!","s");
+    await addDoc(collection(db,"adminLogs"),{action:"VIP APPROVED",targetId:id,timestamp:serverTimestamp()});
+  }catch(err){showToast("Gagal approve VIP.","e");}
+};
+
+// ── Promote to VIP ───────────────────────────────────────────
+window.promoteToVip=async(id,username,email)=>{
+  if(!confirm(`Promosikan ${username} ke VIP?`))return;
+  try{
+    await addDoc(collection(db,"vipUsers"),{username,email,status:"approved",role:"vip",uid:id,createdAt:serverTimestamp()});
+    showToast(`${username} dipromosikan ke VIP!`,"s");
+    await addDoc(collection(db,"adminLogs"),{action:"USER PROMOTED TO VIP",apkTitle:email,timestamp:serverTimestamp()});
+  }catch(err){showToast("Gagal promosikan user.","e");}
+};
+
+// ── Bug resolve ──────────────────────────────────────────────
+window.resolveBug=async id=>{
+  try{
+    await updateDoc(doc(db,"bugReports",id),{status:"resolved",resolvedAt:serverTimestamp()});
+    showToast("Bug ditandai resolved!","s");
+  }catch(err){showToast("Gagal resolve bug.","e");}
+};
+
+// ── Request fulfill ──────────────────────────────────────────
+window.fulfillReq=async id=>{
+  try{
+    await updateDoc(doc(db,"apkRequests",id),{status:"fulfilled",fulfilledAt:serverTimestamp()});
+    showToast("Request ditandai fulfilled!","s");
+  }catch(err){showToast("Gagal update request.","e");}
+};
+
+// ── Confirm Delete ────────────────────────────────────────────
+window.confirmDelete=(col,id,label)=>{
+  document.getElementById("confirm-title").textContent=`Hapus Item?`;
+  document.getElementById("confirm-desc").textContent=`Kamu akan menghapus "${label}". Tindakan ini tidak dapat dibatalkan.`;
+  document.getElementById("confirm-ok-btn").onclick=async()=>{
+    try{
+      await deleteDoc(doc(db,col,id));
+      await addDoc(collection(db,"adminLogs"),{action:"DELETED",targetId:id,apkTitle:label,timestamp:serverTimestamp()});
+      showToast("Item berhasil dihapus!","s");
+      closeModal("modal-confirm");
+    }catch(err){console.error(err);showToast("Gagal menghapus.","e");}
+  };
+  document.getElementById("modal-confirm").classList.add("open");
+};
+</script>
+</body>
+</html>
